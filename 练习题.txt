@@ -95,7 +95,7 @@ ALTER TABLESPACE tablespace_name ADD DATAFILE'c:/APP03.DBF' SIZE 20M;
 alter tablespace tablespace_name drop datafile 'c:/APP03.DBF';
 5、直接删除表空间及数据库文件
 --drop tablespace tablespace_name including contents and datafiles;
---drop temporary tablespace temporary_tablespace_name including contents and datafiles;
+--drop tablespace temporary_tablespace_name including contents and datafiles;
 (cascade contraint)
 6、对控制文件进行多元备份（新增一个控制文件）
 
@@ -145,7 +145,7 @@ create table STUDENT
 constraint PK_STU primary key (学号),
 constraint CK_STU_SEX check( 性别 = '男' or 性别 = '女')
 );
-//alter table STUDENT add constraint CK_STU_SEX cheak(性别 = '男' or 性别 = '女');
+//alter table STUDENT add constraint CK_STU_SEX check(性别 = '男' or 性别 = '女');
 
 create table CLASS
 (
