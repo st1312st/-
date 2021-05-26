@@ -1,0 +1,574 @@
+一、第一次练习题
+1、安装数据库，验收是否安装成功（sqlplus和EM）
+见ppt
+(sqlplus连接指令，通过系统验证连接SYS账号:sqlplus / as sysdba;)
+2、DBCA 创建和删除实例
+开始菜单，所有程序，数据库，配置和移植工具，Database Configuration Assistant
+后按提示操作
+3、NETCA 创建和删除监听、本地网络服务
+开始菜单，所有程序，数据库，配置和移植工具，Net Configuration Assistant
+后按提示操作
+4、查看windows服务列表的数据库实例服务和监听服务状态
+我的电脑右键管理，服务和应用程序，服务
+OracleServiceORCL：实例
+OracleOraDb10g_home1TNSListener：监听
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+二、第二次练习题
+1、以不同方式关闭数据库
+shutdown  immediate （最安全，最快）
+shutdown  normal （最安全）
+shutdown  abort  （最快，强制断电，需要实例恢复）
+shutdown  transactional  （必须保障当前的所有事务结束）
+2、分步骤开启数据库，并每步查看数据库当前状态
+startup nomount;
+select status from v$instance;--查看数据库状态
+alter database mount;
+alter database open;
+3、验证数据库启动三种状态的需要的启动文件
+nomount启动不需要任何文件
+mount启动需要控制文件
+open启动需要所有文件
+4、修改scott和HR用户密码并解锁
+alter user scott identified by abc123;
+alter user scott account unlock
+5、创建自己的用户，并赋予和回收用户角色和权限，删除该用户及所相关对象
+//创建用户
+create user juliet identified by password
+profile default
+default tablespace tablespace_name
+temporary tablespace temporary_tablespace_name
+account unlock;
+//权限授予和回收
+grant connect to juliet 							//revoke connect from username
+grant resource to juliet							//revoke resource from username
+//删除用户，先锁定,再kill掉session，最后用drop删除
+alter user 用户名 account lock;
+select saddr,sid,serial#,paddr,username,status from v$session where username = 'juliet';
+alter system kill session 'sid,serial#';
+drop user 用户名 cascade;
+6、PPT拓展练习（P68，69，70,71）
+常用命令练习
+连接用户scott：Conn Scott/tiger
+解锁scott用户：Alter user scott account unlock;
+查看当前用户拥有的表：
+Select table_name,tablespace_name from user_tables;
+查看表信息（字段，数据类型）：
+Desc dept
+DESC DBA_USERS
+随时插入查询emp表结构
+#DESC EMP 
+
+//制作脚本文件
+内容：SELECT empno, ename, job, 	mgr, hiredate, sal FROM scott.emp WHERE job = 'MANAGER';
+保存为c:/test.sql
+//使用脚本文件
+@c:/test.sql
+7、熟悉SQL*plus常用命令
+略
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+三、第三次练习题
+1、创建一个用户表空间，尝试各类参数
+create tablespace tablespace_name
+datafile 'c:\amop_support.dbf'
+size 50M
+autoextend on next 10M
+maxsize unlimited;
+2、创建一个临时表空间，尝试各类参数
+create temporary tablespace temporary_tablespace_name
+tempfile 'G:\oracle\Administrator\oradata\amop\amop_support_temp.dbf'
+size 500M
+autoextend on
+next 100M maxsize unlimited
+extent management local;
+3、创建一个用户，指定其默认表空间和默认临时表空间是刚才创建的
+create user username identified by password
+profile default
+default tablespace tablespace_name
+temporary tablespace temporary_tablespace_name
+account unlock;
+4、修改表空间大小（重设原数据文件大小或新增数据文件、删除数据文件）
+//重设原数据文件大小
+alter database datafile 'c:/amop_support.DBF' resize 60M;
+//新增数据文件
+ALTER TABLESPACE tablespace_name ADD DATAFILE'c:/APP03.DBF' SIZE 20M;
+//删除数据文件
+alter tablespace tablespace_name drop datafile 'c:/APP03.DBF';
+5、直接删除表空间及数据库文件
+--drop tablespace tablespace_name including contents and datafiles;
+--drop temporary tablespace temporary_tablespace_name including contents and datafiles;
+(cascade contraint)
+6、对控制文件进行多元备份（新增一个控制文件）
+
+//增加控制文件
+set wrap off
+select * from v$controlfile;
+alter system set control_files=
+'E:\ORACLE\PRODUCT\10.2.0\ORADATA\ORCL\CONTROL01.CTL',
+'E:\ORACLE\PRODUCT\10.2.0\ORADATA\ORCL\CONTROL02.CTL',
+'E:\ORACLE\PRODUCT\10.2.0\ORADATA\ORCL\CONTROL03.CTL',
+'E:\ORACLE\PRODUCT\10.2.0\ORADATA\ORCL\CONTROL04.CTL'
+scope=spfile;
+shutdown immediate
+host copy E:\ORACLE\PRODUCT\10.2.0\ORADATA\ORCL\CONTROL01.CTL E:\ORACLE\PRODUCT\10.2.0\ORADATA\ORCL\CONTROL04.CTL
+startup
+select * from v$controlfile;
+
+//减少控制文件
+set wrap off
+select * from v$controlfile;
+alter system set control_files=
+'E:\ORACLE\PRODUCT\10.2.0\ORADATA\ORCL\CONTROL01.CTL',
+'E:\ORACLE\PRODUCT\10.2.0\ORADATA\ORCL\CONTROL02.CTL',
+'E:\ORACLE\PRODUCT\10.2.0\ORADATA\ORCL\CONTROL03.CTL'
+scope=spfile;
+shutdown immediate
+删除控制文件4
+startup
+select * from v$controlfile;
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+四、第四次练习题
+1、新建一个用户
+create user juliet identified by juliet;
+grant connect to juliet 					
+grant resource to juliet;
+alter user juliet account unlock;
+2、在新用户下，按照P121，P121的表结构建设三张表，练习主键与外键、check、UNIQUE等约束条件
+create table STUDENT
+(
+学号 number not null,
+姓名 varchar2(20),
+专业名 varchar2(20),
+性别 char(2),
+出生时间 date,
+总学分 number,
+备注 varchar2(20),
+constraint PK_STU primary key (学号),
+constraint CK_STU_SEX check( 性别 = '男' or 性别 = '女')
+);
+//alter table STUDENT add constraint CK_STU_SEX cheak(性别 = '男' or 性别 = '女');
+
+create table CLASS
+(
+课程号 number not null,
+课程名 varchar2(20) UNIQUE not null,--注意UNIQUE大写
+开课学期 number,
+学时 number,
+学分 number,
+constraint PK_CLA primary key (课程号)
+);
+
+create table STUDENTCLASS
+(
+学号 number,
+课程号 number,
+成绩 number,
+constraint PK_STU_CLA primary key (学号,课程号),
+constraint FK_STU_SC foreign key (学号) references STUDENT(学号),
+constraint FK_CLA_SC foreign key (课程号) references CLASS(课程号)
+);
+//插入信息
+insert into STUDENT values(0001,'黄永军','数据库','男',TO_DATE('1985-09-13','yyyy-mm-dd'),10,'');
+insert into STUDENT values(0002,'申通','数据库','男',TO_DATE('1998-01-10','yyyy-mm-dd'),10,'');
+insert into STUDENT values(0003,'尧聪聪','linux','男',TO_DATE('1996-09-13','yyyy-mm-dd'),10,'');
+insert into CLASS values(001,'数据库',10,10,10);
+insert into STUDENTCLASS values(0001,001,100);
+3、修改表名，新增字段，删除字段
+//修改表名
+alter table STUDENT rename to STUDENT1;
+//添加字段
+alter table temp_student add  join_date varchar2(20);
+--修改字段
+alter table temp_student modify(class varchar2(200));
+--重命名字段
+alter table temp_student rename column  join_date to join;
+--删除字段
+alter table t_student drop column join;
+4、删除表：Drop table cascade constraints 
+//删除表
+drop table STUDENT cascade constraint;
+//回滚
+flashback table STUDENT to before drop;
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+五、第五次练习
+1、新建一个用户
+create user romeo identified by romeo;
+grant connect to romeo 					
+grant resource to romeo;
+alter user romeo account unlock;
+2、在新用户下，新建一个表，表结构和数据来自scott.emp
+create table ROMEO_EMP as select * from scott.emp
+3、熟悉PPT命令，练习高级查询，对新表进行增删改查
+//增
+insert ROMEO_EMP(字段) into values(数值);
+insert into CLASS values(001,'数据库',10,10,10);
+//删
+delete from STUDENT where 姓名 = '申通';--删除申通的一条记录
+delete from STUDENT;--全部删除
+//改
+update STUDENT set 总学分 = 1 where 姓名 = '申通'
+//查
+SELECT *|列名|表达式 FROM 表名 WHERE 条件 ORDER BY 列名
+select * from ROMEO_EMP;--查看全部数据
+select * from STUDENT where 总学分 <= 60;--可以使用算数运算符：>,>=,<,<=,=
+select * from STUDENT where 总学分 <= 60 and 姓名 = '申通';--逻辑运算and，or，not 
+select (ENAME || 'is a' ||JOB) from ROMEO_EMP;
+SELECT DISTINCT DEPTNO FROM EMP; --DISTINCT不显示重复数据
+select * from ROMEO_EMP where JOB IS NULL;
+select * from ROMEO_EMP where JOB IS NOT NULL;--查询NULL和NOT_NULL
+select * from ROMEO_EMP where JOB in ('SALESMAN','PRESIDENT','ANALYST')--查询职业IN（属于）'SALESMAN','PRESIDENT','ANALYST'的数据
+select * from ROMEO_EMP where ENAME like 'J%S';--模糊查询like，%标示任意字符，_标示一个字符
+
+select DEPTNO from DEPT
+minus（可替换）
+select DEPTNO from EMP;--集合运算，交集intersect,并集UNION,并集全部UNION ALL，补集MINUS
+
+select * from EMP,DEPT where EMP.DEPTNO=DEPT.DEPTNO;--连接查询，连接两个表，连接条件DEPTNO值相同
+select * from EMP where DEPTNO=(select DEPTNO from DEPT where DNAME = 'SALES')--子查询
+select * from EMP where SAL<ANY(select SAL from EMP where JOB = 'SALESMAN')--查询小于任意（ANY）职业为SALESMAN的SAL的数据，ANY查询
+select * from EMP where SAL>ALL(select SAL from EMP where JOB = 'SALESMAN')--查询大于所有（ALL）职业为SALESMAN的SAL的数据，ALL查询
+select rowid,ename from EMP where SAL > 2000;--查询ROWID，ROWID值可以唯一标识表中一行，在插入数据时创建。
+select ename from EMP where ROWNUM <= 5;--显示前5行，标识查询结果中一行，在查询时创建
+以上仅为示例
+具体操作详见附录1
+
+4、截断该表
+truncate table ROMEO_EMP;
+
+--密码复杂度修改
+@C:\oracle\product\10.2.0\db_1\RDBMS\ADMIN/utlpwdmg.sql;
+alter system set resource_limit = true;
+alter profile default limit password_verify_function verify_function;
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+附录1：
+
+1.查询所有的部门编号： 
+select DEPTNO from DEPT ;
+
+2.查询所有有人的部门编号： 
+select DEPTNO from EMP ;
+
+3.查询所有岗位名称： 
+select DISTINCT “JOB” from EMP ;
+
+4.查询所有薪水超过两千的员工信息 
+select * from EMP where SAL>2000;
+
+5.查询所有20部门的员工姓名，编号及薪水 
+select ENAME,EMPNO,SAL from EMP where DEPTNO=20;
+
+6.查询所有没有奖金的员工信息 
+select * from EMP where (COMM is NULL OR COMM = 0);
+
+7.查询所有有奖金的员工信息 
+select * from EMP where (COMM is NOT NULL );
+
+8.查询最高领导的员工信息 
+select * from EMP where MGR is NULL;
+
+9.查询所有81年之后入职的员工信息 
+select * from EMP where HIREDATE >= “TO_DATE”(‘1981-01-01’,’yyyy-mm-dd’); 
+select * from EMP where HIREDATE >= ‘1-1月-81’;
+
+10.查询所有薪水在2000-4000范围内的员工信息 
+select * from EMP where SAL BETWEEN 2000 AND 4000;
+
+11.查询所有部门编号是10或30的员工信息 
+select * from EMP where DEPTNO IN (10,30);
+
+12.查询所有20部门并且薪水超过2000的员工信息： 
+select * from EMP where DEPTNO = 20 AND SAL > 2000;
+
+13.查询所有薪水不在2000-4000范围内的员工信息 
+select * from EMP where SAL NOT BETWEEN 2000 AND 4000;
+
+14.查询所有部门编号不是10，30的员工信息 
+select * from EMP where DEPTNO NOT IN (10,30);
+
+15.查询用户名为scott的员工信息：注意区分大小写 
+select * from EMP where ENAME = ‘SCOTT’;
+
+16.查询姓名里面包含ALL的员工姓名 
+select ENAME from EMP WHERE ENAME LIKE ‘%ALL%’;
+
+17.查询所有以”S”开头的同学 
+select * from EMP WHERE ENAME LIKE ‘S%’;
+
+18.查询第二个字母为A的员工姓名 
+select ENAME from EMP WHERE ENAME LIKE ‘_A%’;
+
+19.查询所有员工的编号、姓名、部门编号、职位、薪水，按照薪水降序排列 
+select EMPNO,ENAME,DEPTNO,”JOB”,SAL from EMP ORDER BY SAL DESC;
+
+20.查询所有员工信息，按照部门降序排列，部门内按照薪水升序排列 
+select * from EMP ORDER BY DEPTNO DESC,SAL ASC;
+
+21.查询姓名中包含‘A’员工的姓名，编号，薪水，按照薪水降序排列 
+select ENAME,EMPNO,SAL from EMP WHERE ENAME LIKE ‘%A%’ ORDER BY SAL DESC;
+
+22.查询年收入超过10000的员工的姓名，编号，薪水，年收入，按照年收入降序排列 
+SELECT ENAME,EMPNO,SAL,(SAL+”NVL”(COMM, 0))*12 AS YEARSAL 
+FROM EMP WHERE (SAL+”NVL”(COMM, 0))*12 > 10000 ORDER BY YEARSAL DESC;
+
+23.查询年薪超过10000的员工的姓名，编号，薪水，年收入，按照年薪降序排列 
+SELECT ENAME,EMPNO,SAL,SAL*12 AS YEARSAL 
+FROM EMP WHERE SAL*12 > 10000 ORDER BY YEARSAL DESC;
+
+后续练习题：
+
+24.查询雇员表中，姓名为SMITH的雇员，截止到今天共工作了多少周，则可以使用如下的SQL语句 
+SELECT ROUND((SYSDATE-HIREDATE)/7) AS “Weeks” FROM EMP WHERE ENAME = ‘SMITH’;
+
+25.查询各部门的最高薪水、最低薪水、平均薪水…. 
+SELECT DEPTNO,”MAX”(SAL),”MIN”(SAL),”AVG”(SAL) FROM EMP GROUP BY DEPTNO;
+
+26.查询‘SMITH’的领导姓名 
+SELECT ENAME FROM EMP WHERE EMPNO = (SELECT MGR FROM EMP WHERE ENAME = ‘SMITH’);
+
+27.查询部门名称是‘SALES’的员工信息 
+SELECT * FROM EMP WHERE DEPTNO = (SELECT DEPTNO FROM DEPT WHERE DNAME = ‘SALES’);
+
+28.查询公司中薪水最高的员工信息 
+SELECT * FROM EMP WHERE SAL = (SELECT “MAX”(SAL) FROM EMP);
+
+29.查询公司所有员工的个数 
+SELECT “COUNT”(ENAME) FROM EMP ;
+
+30.查询公司中最高薪水是多少 
+SELECT “MAX”(SAL) FROM EMP ;
+
+31.查询公司中平均奖金是多少 
+SELECT “AVG”(“NVL”(COMM, 0)) FROM EMP ;
+
+32.查询公司中最晚入职的时间 
+SELECT “MAX”(HIREDATE) FROM EMP ;
+
+33.查询公司中有奖金的人数 
+SELECT “COUNT”(ENAME) FROM EMP WHERE (COMM IS NOT NULL) ;
+
+34.查询20部门的最高薪水是多少 
+SELECT “MAX”(SAL) FROM EMP WHERE DEPTNO = 20 ;
+
+35.查询各部门的平均薪水及部门编号，部门名称。 
+SELECT “AVG”(SAL),DNAME,EMP.DEPTNO FROM EMP,DEPT where EMP.DEPTNO = DEPT.DEPTNO GROUP BY DNAME,EMP.DEPTNO;
+
+36.查询各部门中最高薪水的员工编号，姓名… 
+select empno , ename,DEPTNO from emp WHERE SAL in (select “MAX”(SAL) from EMP GROUP BY DEPTNO);
+
+37.查询所有员工姓名中包含‘A’的最高薪水 
+SELECT “MAX”(SAL) FROM EMP WHERE ENAME LIKE ‘%A%’ ;
+
+38.查询各岗位的最高薪水，最低薪水。要求只统计薪水>1000的 
+SELECT “MAX”(SAL),”MIN”(SAL) FROM EMP WHERE SAL > 1000 GROUP BY “JOB”;
+
+39.查询各部门的平均薪水及部门编号，要求只列出平均薪水>2000 
+SELECT AVG(SAL),DEPTNO FROM EMP GROUP BY DEPTNO HAVING AVG(SAL) > 2000;
+
+40.查询各部门的平均薪水及部门编号，要求只有员工姓名中包含 
+‘A’才参与统计，只列出平均薪水>1500的，按照平均薪水降序排列 
+SELECT AVG(SAL),DEPTNO FROM EMP where ENAME LIKE ‘%A%’ GROUP BY DEPTNO HAVING AVG(SAL) > 1500 ORDER BY AVG(SAL) DESC;
+
+41.查询各部门最高薪水的员工信息（有坑）（薪水和部门编号都需要匹配） 
+select * from EMP where (deptno,SAL) in (select deptno,MAX(sal) from emp GROUP BY DEPTNO);
+
+42.查询最高薪水的员工信息 
+SELECT * FROM EMP WHERE SAL = (SELECT “MAX”(SAL) FROM EMP);
+
+43.查询薪水大于该部门平均薪水的员工信息 
+select * from emp e1 where sal > ( 
+select avg(sal) from emp e2 where e1.deptno = deptno 
+);
+
+44.查询最高薪水的员工信息 
+SELECT * FROM EMP WHERE SAL = (SELECT “MAX”(SAL) FROM EMP); 
+45.查询各部门最高薪水的员工信息 
+select * from EMP where (deptno,SAL) in (select deptno,MAX(sal) from emp GROUP BY DEPTNO);
+
+46.查询‘SMITH’的领导姓名 
+select ENAME from EMP where EMPNO = (select MGR from EMP where ENAME = ‘SMITH’) ;
+
+47.查询部门名称是‘SALES’的员工信息 
+select * from EMP where DEPTNO = (SELECT DEPTNO FROM DEPT WHERE dname = ‘SALES’) ;
+
+48.查询公司中薪水最高的员工信息 
+select * from EMP where SAL = (SELECT MAX(SAL) FROM EMP) ;
+
+49.查询薪水等级为4的员工信息 
+select * from emp where sal between 
+(select LOSAL from salgrade where grade = 4) AND 
+(select HISAL from salgrade where grade = 4) ;
+
+50.查询领导者是‘BLAKE’的员工信息 
+select * from emp where MGR = (select EMPNO from emp where ENAME = ‘BLAKE’);
+
+51.查询最高领导者的薪水等级 
+select grade FROM SALGRADE where (SELECT SAL from emp where mgr is NULL) BETWEEN LOSAL AND HISAL;
+
+52.查询薪水最低的员工信息 
+select * from emp where SAL = (select MIN(sal) from emp);
+
+53.查询和SMITH工作相同的员工信息 
+select * from emp where JOB = (select JOB from emp where ENAME = ‘SMITH’) ;
+
+54.查询不是领导的员工信息 
+select * from emp where EMPNO not in (SELECT “NVL”(MGR, 0) FROM EMP) ;
+
+select * from emp e1 where not EXISTS 
+(select * from emp e2 where e2.mgr = e1.empno);
+
+55.查询平均工资比10部门低的部门编号 
+select deptno from emp group by deptno having avg(sal) < 
+(select avg(sal) from emp where deptno = 10);
+
+56.查询在纽约工作的所有员工 
+select * from EMP where DEPTNO = (select DEPTNO from DEPT where LOC = ‘NEW YORK’);
+
+57.查询‘SALES’部门平均薪水的等级 
+select grade from SALGRADE where 
+(select AVG(SAL) from emp where DEPTNO = 
+(select DEPTNO FROM DEPT WHERE dname = ‘SALES’) ) BETWEEN LOSAL AND HISAL;
+
+58.查询10号部门的员工在整个公司中所占的比例： 
+select (select COUNT(DEPTNO) from EMP where DEPTNO = 10) / (select COUNT(*) from EMP) FROM dual;
+
+59.每页显示5条。 
+显示第一页内容： 
+select rownum rn,EMP.* from emp where rownum <= 5； 
+显示第二页的内容： 
+select * from 
+(select rownum rn,EMP.* from emp where rownum <= 10) 
+where rn > 5; 
+按照薪水降序排列，每页显示5条,显示第二页的内容: 
+select emp.* from 
+(select rownum rn,t1.* from 
+(select * from emp order by sal desc) t1 
+where rownum <= 10) emp 
+where rn > 5;
+
+60.查询各部门工资大于该部门平均工资的员工信息： 
+select * from emp e1 where sal > ( 
+select avg(sal) from emp e2 where e1.deptno = deptno 
+);
+
+61.查询各岗位工资小于该岗位平均工资的员工信息； 
+select * from emp e1 where sal < (select avg(sal) from emp e2 where e1.job= job group by job);
+
+62.查询所有领导的信息：要求使用exists关键字 
+select * from emp e1 where EXISTS 
+(select * from emp e2 where e2.mgr = e1.empno);
+
+63.查询所有员工的姓名，薪水，部门名称 
+select ename,sal,dname from emp,dept where EMP.DEPTNO = DEPT.DEPTNO;
+
+64.查询所有员工的姓名，薪水，部门名称,薪水等级 
+select ename,sal,dname,grade from emp,dept,SALGRADE 
+where EMP.DEPTNO = DEPT.DEPTNO and SAL BETWEEN LOSAL AND HISAL;
+
+65.查询员工姓名及领导者姓名 
+select a.ename AS 员工姓名 ,b.ename AS 领导姓名 
+from emp a LEFT JOIN emp b on a.mgr = b.empno;
+
+66.查询所有员工的姓名，部门名称 
+select ename, dname from emp ,dept where EMP.deptno = DEPT.deptno;
+
+练习题：
+
+1.查询员工表中工资大于1600的员工的姓名和工资 
+select ename,sal from emp where sal > 1600;
+
+2.查询员工表中员工号是17的员工的姓名和部门编号 
+select ename,deptno from emp where empno = 17;
+
+3.选择员工表中工资不在4000到5000内的员工的姓名和工资 
+select ename,sal from emp where sal not BETWEEN 4000 and 5000;
+
+4.选择员工表中在20和30部门工作的员工的姓名和部门号 
+select ename,deptno from emp where deptno in (20,30);
+
+5.选择员工表中没有管理者的员工姓名及职位，按职位排序 
+select ename,job from emp where mgr is null ORDER BY job asc;
+
+6.选择员工表中有奖金的员工姓名，工资和奖金，按工资倒序排列 
+select ename,sal,comm from emp where comm is not null ORDER BY sal asc;
+
+7.选择员工表中员工姓名的第三个字母是A的员工姓名 
+select ename from emp where ename like ‘__A%’;
+
+8.列出部门表中的部门名称和所在城市 
+select dname,loc from dept ;
+
+9.显示员工表中的不重复的岗位job 
+select DISTINCT job from emp ;
+
+10.连接员工表中的员工姓名、职位、薪水，列之间用逗号连接，列头显示成out_put 
+select ename ||’,’|| job ||’,’|| sal AS ename_job_sal from emp ;
+
+11.查询员工表中员工号，姓名，工资，以及工资提高百分之20之后的结果 
+select empno ,ename,sal ,sal*1.2 from emp ;
+
+12.查询员工的姓名和工资数，条件限定为工资数必须大于1200，并且查询结果按入职时间进行排序。早入职的员工排在前面 
+select empno ,sal,HIREDATE from emp where sal > 1200 ORDER BY HIREDATE ;
+
+13.列出除了ACCOUNTING部门之外还有什么部门 
+select dname from dept where dname != ‘ACCOUNTING’;
+
+14.把雇员按部门分组，求最高薪水，部门号 要求过滤掉名字中第二个字母是’A’的员工， 并且部门的平均薪水 > 3000,按照部门编号倒序排列 
+select MAX(sal),deptno from emp where ename not like ‘_A%’ GROUP BY deptno having avg(sal) > 3000 ;
+
+15.求工作职位是’manager’的员工姓名，部门名称和薪水等级 
+select ename ,dname,grade from emp,dept,salgrade 
+where job = ‘MANAGER’ and (sal BETWEEN LOSAL and HISAL) 
+and EMP.DEPTNO = DEPT.DEPTNO;
+
+按照部门分组统计，求最高薪水，平均薪水，最低薪水，只有薪水是1200以上的员工才参与统计，并且分组结果中只包含平均薪水在1500以上的部门，并且按照平均薪水倒序排列 
+select max(sal),min(sal),avg(sal) from emp where sal > 1200 
+group by deptno having avg(sal) > 1500 order by avg(sal) DESC; 
+17.求薪水最高的员工姓名 
+select ename from emp where sal = (select max(sal) from emp);
+
+18.查询各部门平均薪水等级，并且按平均薪水等级的降序排列 
+select grade from salgrade s join 
+(select avg(sal) avg_sal from emp e group by deptno) temp 
+on TEMP.avg_sal between s.LOSAL and s.HISAL;
+
+19.查询所有员工姓名以S或s开头的所有员工信息 
+select * from emp where ename like ‘S%’ or ename like ‘s%’;
+
+20.查询所有工作时间超过一年的员工编号，姓名及入职时间,要求雇用时间的格式为’yyyy年mm月dd日’ 
+select empno,ename,TO_CHAR(HIREDATE,’yyyy”年”MM”月”dd”日”’) from emp where 
+TO_CHAR(SYSDATE,’YYYY’) - TO_CHAR(hiredate,’YYYY’) > 1;
+
+21.查询20部门的所有员工的员工姓名，实际收入 
+select ename,sal+NVL(comm, 0) from emp where deptno = 20 ;
+
+22.查询10部门工资大于3000的员工信息，要求按员工的入职时间由前到后排序 
+select * from emp where deptno = 10 and sal > 3000 ORDER BY HIREDATE ;
+
+23.查询10部门或20部门的所有员工的姓名，并截取前三位，按员工姓名升序排列 
+select SUBSTR(ename, 1, 3) from emp where deptno in (20,10) ORDER BY ename ;
+
+24、查询所有员工的姓名，要求所有员工的姓名显示成小写，雇用日期显示为”yyyy-mm-dd”这种格式，薪水转换成’99,999.999′ 这种格式selectlower(ename),TOCHAR(HIREDATE,′YYYY−MM−DD′),TOCHAR(sal,′ 99,999.999’) from emp ;
+
+25、查询所有员工的姓名，所在部门名称，薪水，薪水等级、直接领导的姓名 （有问题，不显示最高领导） 
+select e1.ename,DEPT.dname,e1.sal,grade,e2.ename AS leader from emp e1,emp e2,dept,salgrade 
+where nvl(e1.MGR,0) = e2.empno and (e1.sal between SALGRADE.LOSAL and SALGRADE.HISAL) 
+and e1.deptno = dept.deptno;
+
+26、查询部门名称是’ACCOUNTING’的员工姓名及薪水等级 
+select ename,grade from emp ,salgrade ,dept where 
+dname=’ACCOUNTING’ and sal between LOSAL and HISAL 
+and EMP.deptno = DEPT.deptno ;
+
+27、不能使用组函数，查询薪水的最高值 
+select sal from emp where sal >= all (select sal from emp);
+
+28、统计平均薪水最高的部门名称
+
+29、查询平均薪水等级最低的部门名称
+
+选做
+
+1、查询平均薪水最低的部门名称，要求：只有领导才参加统计 
+2、查询比普通员工的最高薪水还要高的领导者姓名 
+3、找出薪水最高的五个人 
+4、查询第2到第7名的员工，按薪水降序排列 
+5、查询最后入职的5名员工
