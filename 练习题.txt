@@ -41,10 +41,7 @@ account unlock;
 //权限授予和回收
 grant connect to juliet 							//revoke connect from username
 grant resource to juliet							//revoke resource from username
-//删除用户，先锁定,再kill掉session，最后用drop删除
-alter user 用户名 account lock;
-select saddr,sid,serial#,paddr,username,status from v$session where username = 'juliet';
-alter system kill session 'sid,serial#';
+//删除用户
 drop user 用户名 cascade;
 6、PPT拓展练习（P68，69，70,71）
 常用命令练习
